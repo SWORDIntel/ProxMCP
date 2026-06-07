@@ -1,11 +1,11 @@
 {
   "mcpServers": {
-    "vm-mcp": {
+    "proxmcp": {
       "type": "stdio",
       "command": "sh",
       "args": [
         "-c",
-        "_ROOT=\"${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-$PWD}}}\"; exec \"$_ROOT/plugin/scripts/start-vm-mcp.sh\""
+        "_ROOT=\"${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-$PWD}}}\"; exec \"$_ROOT/plugin/scripts/start-proxmcp.sh\""
       ]
     }
   }

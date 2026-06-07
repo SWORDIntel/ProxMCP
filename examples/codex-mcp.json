@@ -1,10 +1,10 @@
 {
   "mcpServers": {
     "proxmcp": {
-      "command": "proxmcp-server",
+      "command": "/home/john/Documents/ProxMCP/.venv/bin/proxmcp-server",
       "args": [],
       "env": {
-        "PROXMCP_AUDIT_LOG": "/var/log/proxmcp-audit.log",
+        "PROXMCP_AUDIT_LOG": "/home/john/.gemini/logs/proxmcp-audit.log",
         "PROXMCP_ALLOW_BREAK_GLASS": "1"
       }
     }

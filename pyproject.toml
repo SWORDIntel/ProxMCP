@@ -3,12 +3,21 @@ name = "proxmcp"
 version = "0.1.0"
 requires-python = ">=3.10"
 description = "Proxmox-oriented MCP server and CLI for VM lifecycle, orchestration, and host/guest operations"
-dependencies = ["fastmcp"]
+dependencies = [
+    "fastmcp",
+    "pyftpdlib>=2.2.0",
+]
 readme = "README.md"
 license = { text = "MIT" }
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.4.0",
+]
 
 [project.scripts]
 vmctl = "proxmcp.cli:main"

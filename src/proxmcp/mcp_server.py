@@ -438,7 +438,7 @@ async def vm_file_get(
     audit_tag: str | None = None,
 ) -> dict[str, Any]:
     """Read a file from a VM."""
-    command = _q_cmd("qm", "guest", "exec", vmid, "--", "cat", remote_path)
+    command = _q_cmd("qm", "guest", "file", "read", vmid, remote_path)
     return await _run_with_policy(
         vmid=vmid,
         actor=actor,

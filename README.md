@@ -183,6 +183,8 @@ Add to your MCP client config (e.g. `~/.config/claude/claude_desktop_config.json
 | `vm_write` | Write or append text content to a guest file |
 | `vm_tar_extract` | Extract `.tar` / `.tar.gz` / `.tar.bz2` / `.tar.xz` on the guest |
 
+> **Performance Note:** `vm_file_put` and `vm_file_get` utilize a high-performance **Temporary FTP Server** mechanism. Instead of inefficient base64 chunking or `cat` stdout capture, ProxMCP spins up a short-lived FTP server on the host to transfer files directly to/from the guest via `ftplib` / `urllib`.
+
 ---
 
 #### Guest Search
@@ -471,6 +473,7 @@ src/proxmcp/
 ├── mcp_server.py    # FastMCP tool definitions — 54 tools (~2500 lines)
 ├── cli.py           # argparse CLI (vmctl)
 ├── proxmox.py       # Proxmox lifecycle, snapshot, file I/O, config, backup, guest exec
+├── ftp_server.py    # Temporary FTP server for high-performance file transfers
 ├── vm_memory.py     # Per-VM JSON knowledge store (~/.proxmcp/memory/)
 ├── policy.py        # Allowlist/denylist policy enforcement (PolicyEnforcer)
 ├── runner.py        # Async subprocess runner with timeout + retry

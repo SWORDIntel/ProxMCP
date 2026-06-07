@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import re
 import shlex
+import tempfile
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
 from .models import CommandResult
 from .runner import CommandRunner
+from .ftp_server import TemporaryFTPServer
 
 
 _VMID_RE = re.compile(r"^[0-9]+$")
@@ -195,7 +198,7 @@ class ProxmoxFileOps:
     runner: CommandRunner
 
     async def put(self, vmid: str, local_path: str, remote_path: str) -> CommandResult:
-        """Upload a file to the guest using qm guest exec and base64."""
+        """Upload a file to the guest using a temporary FTP server."""
         error = _ensure_vmid(vmid)
         if error:
             return _invalid(vmid, "file put", error)
@@ -206,28 +209,54 @@ class ProxmoxFileOps:
         if not path.exists():
             return _invalid(vmid, "file put", f"Local file not found: {local_path}")
 
-        import base64
-        with path.open("rb") as f:
-            encoded = base64.b64encode(f.read()).decode("utf-8")
-
-        # Use python3 on the guest to decode and write the file
-        cmd = build_qm_command(
-            "qm", "guest", "exec", vmid, "--", 
-            "python3", "-c", 
-            f"import base64; open('{remote_path}', 'wb').write(base64.b64decode('{encoded}'))"
-        )
-        return await self.runner.run(vmid=vmid, cmd=cmd)
+        # Use a temporary directory to host the file for FTP
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir) / path.name
+            shutil.copy2(path, tmp_path)
+            
+            with TemporaryFTPServer(tmpdir) as ftp:
+                host_ip = ftp.get_reachable_ip()
+                # Guest command to download the file from the host's temporary FTP server
+                # We use python3 on the guest as it's typically available and has built-in FTP support
+                guest_cmd = (
+                    f"python3 -c \"import urllib.request; "
+                    f"urllib.request.urlretrieve('ftp://{host_ip}:{ftp.port}/{path.name}', '{remote_path}')\""
+                )
+                cmd = build_qm_command("qm", "guest", "exec", vmid, "--", "bash", "-c", guest_cmd)
+                return await self.runner.run(vmid=vmid, cmd=cmd)
 
     async def get(self, vmid: str, remote_path: str) -> CommandResult:
-        """Read a file from the guest using qm guest exec."""
+        """Read a file from the guest using a temporary FTP server."""
         error = _ensure_vmid(vmid)
         if error:
             return _invalid(vmid, "file get", error)
         if _CONTROL_RE.search(remote_path):
             return _invalid(vmid, "file get", "remote path contains control characters")
 
-        cmd = build_qm_command("qm", "guest", "exec", vmid, "--", "cat", remote_path)
-        return await self.runner.run(vmid=vmid, cmd=cmd)
+        filename = Path(remote_path).name
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with TemporaryFTPServer(tmpdir) as ftp:
+                host_ip = ftp.get_reachable_ip()
+                # Guest command to upload the file to the host's temporary FTP server
+                guest_cmd = (
+                    f"python3 -c \"from ftplib import FTP; ftp=FTP(); "
+                    f"ftp.connect('{host_ip}', {ftp.port}); ftp.login(); "
+                    f"with open('{remote_path}', 'rb') as f: ftp.storbinary('STOR {filename}', f); "
+                    f"ftp.quit()\""
+                )
+                cmd = build_qm_command("qm", "guest", "exec", vmid, "--", "bash", "-c", guest_cmd)
+                result = await self.runner.run(vmid=vmid, cmd=cmd)
+                
+                if result.ok:
+                    local_file = Path(tmpdir) / filename
+                    if local_file.exists():
+                        # Read the file content to return it in the CommandResult
+                        with open(local_file, "r", errors="replace") as f:
+                            result.stdout = f.read()
+                    else:
+                        result.ok = False
+                        result.stderr = f"FTP transfer failed: {filename} not found on host"
+                return result
 
 
 @dataclass(slots=True)
