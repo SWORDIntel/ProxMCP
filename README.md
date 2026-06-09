@@ -1,73 +1,72 @@
-# pvemcp
+<div align="center">
 
-`Python 3.11+` · `MCP` · `Proxmox` · `Production-Ready` · `63 Tools` · `License: MIT`
+# 🌌 PveMCP
+### The Proxmox VM Control Plane for AI Agents
 
-A production-grade **Proxmox VM control plane** with a native [Model Context Protocol](https://modelcontextprotocol.io/) server and a first-class CLI (`vmctl`). 
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-orange.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-green.svg)](https://modelcontextprotocol.io/)
+[![Production Ready](https://img.shields.io/badge/status-production--ready-success.svg)]()
+[![Tools](https://img.shields.io/badge/tools-63-blueviolet.svg)]()
+
+**A production-grade Proxmox orchestrator that gives your AI agent "God-mode" over your cluster and remote SSH hosts.**
+
+[Tool Reference](docs/tools.md) • [Installation](INSTALL.md) • [Security](docs/tools.md#security)
+
+</div>
 
 ---
 
 ## 🚀 Showcase
 
-pvemcp gives your AI agent "God-mode" over your Proxmox cluster and remote SSH hosts.
+PveMCP empowers your AI assistant (Claude, Cursor, Gemini) to handle complex infrastructure tasks autonomously and safely.
 
-- **Fearless Debugging**: `vm_transactional_exec` takes a snapshot, runs your fix, validates it, and rolls back if it breaks.
-- **LAN Bridging**: `vm_expose_port` dynamically maps internal VM services to random high ports on your host's LAN IP.
-- **Encrypted Secrets**: Store private SSH keys in a unified memory store, encrypted at rest with AES-256-GCM.
-- **Live Observability**: Stream remote logs for specific durations and view a live Markdown dashboard of your entire fleet.
-- **Zero-Config Onboarding**: `vm_autodiscover` maps an entire VM's services, containers, and OS in seconds.
+- **🛡️ Fearless Debugging**: `vm_transactional_exec` takes a snapshot, runs your fix, validates it, and rolls back instantly if it fails.
+- **🌐 LAN Bridging**: `vm_expose_port` dynamically maps internal VM services to random high ports on your host's LAN IP for instant access.
+- **🔐 Encrypted Secrets**: Store private SSH keys and credentials in a unified memory store, encrypted at rest with **AES-256-GCM**.
+- **📊 Live Observability**: Stream remote logs in real-time and view a live Markdown "HUD" dashboard of your entire fleet.
+- **✨ Zero-Config Onboarding**: `vm_autodiscover` maps an entire VM's services, containers, and OS architecture in seconds.
 
 ---
 
 ## 🛠️ Tooling Overview
 
-PveMCP's 63 tools are organized into functional categories to empower AI agents:
+PveMCP's **63 tools** are organized into functional categories to empower autonomous operation:
 
-- **VM Lifecycle**: Power states (start/stop), cloning, migration, backups, and configuration.
-- **Guest Inspection**: Real-time process lists, CPU/RAM usage, disk health, and environment variables.
-- **Guest Logs**: Stream systemd journals, kernel buffers (dmesg), and specific log files.
-- **Guest File Ops**: High-performance file transfers (FTP bridge), archive extraction, and writing.
-- **Guest Search**: Deep content search with `ripgrep` and complex file finding.
-- **Guest Networking**: In-guest HTTP requests (`curl`), traceroutes, DNS checks, and port auditing.
-- **Service Management**: Full control over systemd services including journal tailing.
-- **Docker Management**: Inspect containers, restart stacks, and deploy via Docker Compose.
-- **Power-User (Autonomous)**: Transactional execution (snapshot-rollback) and LAN port exposure.
-- **Federation & Remote**: SSH gateway for non-PVE hosts with encrypted key persistence.
-- **VM Memory**: A unified, persistent context store for all VM knowledge and secrets.
-- **Host Operations**: Proxmox storage management, ISO downloads, and serial console access.
-- **Fleet Orchestration**: Parallel fan-out execution and sequenced dependency-graph workflows.
-- **Automation**: One-shot VM autodiscovery and baseline drift detection.
+*   **⚡ VM Lifecycle**: Power states, cloning, migration, vzdump backups, and hardware configuration.
+*   **🔍 Guest Inspection**: Real-time process monitoring, CPU/RAM telemetry, and disk health analysis.
+*   **📜 Guest Logs**: Stream systemd journals, kernel ring buffers (dmesg), and specific log files.
+*   **📂 File Operations**: High-performance FTP-bridge transfers, archive management, and config writing.
+*   **🛰️ Federation**: SSH gateway for non-PVE hosts with persistent encrypted credential management.
+*   **🏗️ Docker & Compose**: Deploy complete stacks in one shot and manage container lifecycles.
+*   **🧠 VM Memory**: A unified, persistent JSON knowledge base for all VM-specific quirks and secrets.
+*   **🧪 Network Diagnostics**: In-guest HTTP requests (`curl`), traceroutes, DNS checks, and port auditing.
+*   **🤖 Automation**: One-shot autodiscovery and baseline drift detection for self-healing infrastructure.
 
 ---
 
-## 🛠️ Key Components
+## 🏗️ Key Components
 
 | Binary | Purpose |
-|---|---|
-| `pvemcp-server` | High-performance MCP server (stdio transport, 63 tools) |
-| `vmctl` | Human-facing CLI for scripting and manual control |
-
----
-
-## 📖 Documentation
-
-- **[Full Tool Reference](docs/tools.md)** — Detailed technical docs for all 63 tools.
-- **[Installation Guide](INSTALL.md)** — How to wire PveMCP into your AI client.
+| :--- | :--- |
+| `pvemcp-server` | High-performance MCP server (stdio transport) |
+| `vmctl` | Human-facing CLI for scripting and manual cluster control |
 
 ---
 
 ## ⚡ Quick Start
 
+### 1. Installation
 ```bash
-# 1. Install using uv (recommended)
+# Recommended: Install using uv
 uv sync
 uv run pvemcp-server
 
-# 2. Or use the one-shot installer
+# Or use the one-shot installer to wire into your clients
 bash scripts/install-pvemcp.sh --client both
 ```
 
-**First-run sequence for a new VM:**
-
+### 2. First Run Sequence
 ```bash
 uv run vmctl autodiscover 100           # map everything -> save to memory
 uv run vmctl memory get 100             # verify saved context
@@ -78,13 +77,21 @@ uv run vmctl drift-check 100            # detect unauthorized changes later
 
 ## 🔒 Security & Safety
 
-- **Fail-Closed Policy**: Every command must be explicitly allowed.
-- **Danger Mode Escalation**: Destructive commands require `break_glass` mode.
-- **Automatic Redaction**: Secrets, keys, and passwords never leave the host.
-- **Audit Logging**: Every single AI action is logged to an append-only JSON file.
+PveMCP is built for secure, single-operator environments:
+- **Fail-Closed**: Every command must be explicitly permitted by policy.
+- **Redaction**: Secrets and keys are stripped from outputs before the AI sees them.
+- **Audit**: Every action is logged to an append-only JSON file for full accountability.
+- **Encryption**: Sensitive memory fields are AES-256 encrypted using a machine-local secret.
 
 ---
 
-## License
+## ⚖️ License
 
-MIT — see [LICENSE](LICENSE).
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+> ⚠️ **Commercial Use Warning**: The AGPL-3.0 is a highly restrictive copyleft license. If you modify this software or use it over a network as part of a commercial service, you **must** open-source your entire service under the same license. 
+> 
+> - **Home & Personal Use**: 100% Free and Open Source.
+> - **Commercial / Enterprise Use**: If the AGPL-3.0 is too harsh for your environment, please **email me** to discuss a commercial license.
+
+See the [LICENSE](LICENSE) file for full details.
