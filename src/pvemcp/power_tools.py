@@ -116,3 +116,62 @@ async def vm_pcap_analyze(vmid: str, interface: str = "any", port: int | None = 
     stdout = _guest_stdout(str(res.get("stdout", "")))
     return {"ok": res.get("ok"), "summary": f"PCAP analysis for {duration}s", "top_talkers": stdout.splitlines()}
 
+# ---------------------------------------------------------------------------
+# REMOTE SSH / LOG STREAMING TOOLS
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def remote_tail(
+    host: str,
+    path: str,
+    lines: int = 50,
+    user: str = "root",
+    identity_file: str = "~/.ssh/id_ed25519",
+    actor: str = "mcp-agent"
+) -> dict[str, Any]:
+    """Fetch the last N lines of a log file on a remote host via SSH."""
+    import shlex
+    from .remote import SSHRunner
+    runner = SSHRunner(host=host, user=user, identity_file=identity_file)
+    res = await runner.run(f"tail -n {lines} {shlex.quote(path)}")
+    return _fmt(res, label=f"remote_tail:{host}")
+
+@mcp.tool()
+async def remote_log_capture(
+    host: str,
+    path: str,
+    duration: int = 10,
+    user: str = "root",
+    identity_file: str = "~/.ssh/id_ed25519",
+    actor: str = "mcp-agent"
+) -> dict[str, Any]:
+    """Watch a live remote log (tail -f) for a specific duration (seconds) and return the output. Perfect for capturing pipeline stages."""
+    import shlex
+    from .remote import SSHRunner
+    runner = SSHRunner(host=host, user=user, identity_file=identity_file)
+    # We use timeout on the SSH side to kill the tail
+    cmd = f"timeout {duration} tail -f {shlex.quote(path)} || true"
+    # We also need a timeout on the runner side slightly longer than duration
+    res = await runner.run(cmd, timeout_s=duration + 5)
+    
+    stdout = str(res.stdout or "")
+    return {
+        "ok": True, 
+        "summary": f"Captured {duration}s of {path} on {host}", 
+        "lines": stdout.splitlines()
+    }
+
+@mcp.tool()
+async def remote_file_get(
+    host: str,
+    remote_path: str,
+    user: str = "root",
+    identity_file: str = "~/.ssh/id_ed25519",
+) -> dict[str, Any]:
+    """Read a file from a remote host via SSH (useful for extracting certs, configs, etc)."""
+    import shlex
+    from .remote import SSHRunner
+    runner = SSHRunner(host=host, user=user, identity_file=identity_file)
+    res = await runner.run(f"cat {shlex.quote(remote_path)}")
+    return _fmt(res, label=f"remote_file_get:{host}")
+
