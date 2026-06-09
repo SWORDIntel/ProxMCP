@@ -1,6 +1,6 @@
 # pvemcp
 
-`Python 3.11+` · `MCP` · `Proxmox` · `Production-Ready` · `54 Tools` · `License: MIT`
+`Python 3.11+` · `MCP` · `Proxmox` · `Production-Ready` · `57 Tools` · `License: MIT`
 
 A production-grade **Proxmox VM control plane** with a native [Model Context Protocol](https://modelcontextprotocol.io/) server and a first-class CLI (`vmctl`). Runs directly on the Proxmox host, driving VMs through `qm`/`pct` commands and the QEMU guest agent.
 
@@ -13,7 +13,8 @@ A production-grade **Proxmox VM control plane** with a native [Model Context Pro
 - [Installation](#installation)
 - [Environment Variables](#environment-variables)
 - [MCP Server](#mcp-server)
-  - [Client Wiring](#client-wiring)
+  - [Resources](#mcp-resources)
+  - [Prompts](#mcp-prompts)
   - [Tool Reference](#tool-reference)
 - [vmctl CLI Reference](#vmctl-cli-reference)
 - [Workflow Examples](#workflow-examples)
@@ -25,13 +26,13 @@ A production-grade **Proxmox VM control plane** with a native [Model Context Pro
 
 ## Overview
 
-pvemcp exposes every Proxmox VM operation — lifecycle, execution, file I/O, logs, networking, Docker, packages, memory, and fleet orchestration — as MCP tools consumable by any MCP-compatible AI client (Claude Desktop, Cursor, etc.) and as `vmctl` subcommands for scripting and direct use.
+pvemcp exposes every Proxmox VM operation — lifecycle, execution, file I/O, logs, networking, Docker, packages, memory, and fleet orchestration — as MCP tools consumable by any MCP-compatible AI client (Claude Desktop, Cursor, Gemini CLI, Codex, etc.) and as `vmctl` subcommands for scripting and direct use.
 
 **Key binaries**
 
 | Binary | Purpose |
 |---|---|
-| `pvemcp-server` | MCP server (stdio transport, 54 tools) |
+| `pvemcp-server` | MCP server (stdio transport, 57 tools) |
 | `vmctl` | Human/script-facing CLI |
 
 ---
@@ -39,33 +40,21 @@ pvemcp exposes every Proxmox VM operation — lifecycle, execution, file I/O, lo
 ## Quick Start
 
 ```bash
-# 1. Install on the Proxmox host
-pip install git+https://github.com/SWORDIntel/pvemcp.git
+# 1. Install using uv (recommended)
+uv sync
+uv run pvemcp-server
 
-# 2. Run the MCP server (stdio, picked up by your MCP client)
-pvemcp-server
-
-# 3. Or use the CLI directly
-vmctl list
-vmctl state 100 status
-vmctl guest-exec 100 "systemctl status nginx"
-```
-
-**One-shot installer** (installs + configures + optionally registers systemd service):
-
-```bash
-bash scripts/install-pvemcp.sh --client both          # install for both root and a user
-bash scripts/install-pvemcp.sh --install-service      # register systemd service
-bash scripts/install-pvemcp.sh --uninstall            # remove everything
+# 2. Or use the one-shot installer (installs + registers with clients)
+bash scripts/install-pvemcp.sh --client both
 ```
 
 **Recommended first-run sequence for any VM:**
 
 ```bash
-vmctl agent-probe 100            # 1. confirm guest agent is alive
-vmctl autodiscover 100           # 2. map VM, save context to memory
-vmctl memory get 100             # 3. verify saved context
-vmctl drift-check 100            # 4. check for drift after changes
+uv run vmctl agent-probe 100            # 1. confirm guest agent is alive
+uv run vmctl autodiscover 100           # 2. map VM, save context to memory
+uv run vmctl memory get 100             # 3. verify saved context
+uv run vmctl drift-check 100            # 4. check for drift after changes
 ```
 
 ---
@@ -78,15 +67,15 @@ vmctl drift-check 100            # 4. check for drift after changes
 python -m pip install git+https://github.com/SWORDIntel/pvemcp.git
 ```
 
-### Local development
+### Local development (using uv)
 
 ```bash
 git clone https://github.com/SWORDIntel/pvemcp.git
 cd pvemcp
-pip install -e .
+uv sync
 ```
 
-> **Note:** pvemcp must run **on the Proxmox host** itself. It calls `qm`, `pct`, and `qemu-guest-agent` directly — these are not available over a remote API.
+> **Note:** pvemcp must run **on the Proxmox host** itself. It calls `qm`, `pct`, and `qemu-guest-agent` directly.
 
 ---
 
@@ -102,19 +91,35 @@ pip install -e .
 
 ## MCP Server
 
+### MCP Resources
+
+pvemcp provides structured resources for direct data inspection:
+
+| URI | Description |
+|---|---|
+| `pvemcp://metrics` | Current system performance and audit metrics |
+| `pvemcp://vms/{vmid}/memory` | Persistent context/knowledge for a specific VM |
+
+### MCP Prompts
+
+Reusable prompt templates for common workflows:
+
+| Prompt | Description |
+|---|---|
+| `vm-troubleshoot` | Generates a structured plan to diagnose a failing VM |
+
 ### Client Wiring
 
-Add to your MCP client config (e.g. `~/.config/claude/claude_desktop_config.json`):
+Add to your MCP client config:
 
 ```json
 {
   "mcpServers": {
     "pvemcp": {
-      "command": "pvemcp-server",
+      "command": "uv",
+      "args": ["--directory", "/path/to/pvemcp", "run", "pvemcp-server"],
       "env": {
-        "PVEMCP_AUDIT_LOG": "/var/log/pvemcp-audit.log",
-        "PVEMCP_ALLOW_BREAK_GLASS": "1",
-        "PVEMCP_MEMORY_DIR": "/var/lib/pvemcp/memory"
+        "PVEMCP_ALLOW_BREAK_GLASS": "1"
       }
     }
   }
@@ -123,7 +128,7 @@ Add to your MCP client config (e.g. `~/.config/claude/claude_desktop_config.json
 
 ### Tool Reference
 
-**54 tools** across 14 categories.
+**57 tools** across 14 categories.
 
 ---
 
