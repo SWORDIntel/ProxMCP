@@ -24,7 +24,7 @@ from .workflows import WorkflowManager, ArtifactIndex
 from .models import CommandResult
 from .metrics import Timer
 from .vm_memory import (
-    _MEMORY_DIR,
+    clear_vm_memory,
     _now,
     annotate_vm,
     list_all_vm_memories,
@@ -944,10 +944,7 @@ def vm_memory_list() -> dict[str, Any]:
 @mcp.tool()
 def vm_memory_clear(vmid: str) -> dict[str, Any]:
     """Clear all stored memory for a VM (resets notes, paths, services, containers, etc)."""
-    import os as _os
-    path = _MEMORY_DIR / f"{vmid}.json"
-    if path.exists():
-        _os.remove(path)
+    if clear_vm_memory(vmid):
         return {"ok": True, "summary": f"Memory cleared for VM {vmid}"}
     return {"ok": True, "summary": f"No memory record found for VM {vmid} (nothing to clear)"}
 
