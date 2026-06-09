@@ -13,6 +13,7 @@ from .mcp_server import (
     _guest_exec_command,
     _guest_stdout,
     _fmt,
+    file_ops,
 )
 
 # ---------------------------------------------------------------------------
@@ -197,3 +198,38 @@ try:
     loop.create_task(start_watchdog_server())
 except RuntimeError:
     pass # No running loop yet, that's fine.
+
+@mcp.tool()
+async def vm_sandbox_sync(
+    source_vmid: str,
+    target_vmid: str,
+    file_paths: list[str],
+    actor: str = "mcp-agent",
+    danger_mode: bool | Literal["safe", "maintenance", "break_glass"] = False,
+    audit_tag: str | None = None,
+) -> dict[str, Any]:
+    """Sync a list of configuration files from a production VM to a sandbox/template VM."""
+    synced_files = []
+    for path in file_paths:
+        # 1. Get from source
+        res_get = await file_ops.get(vmid=source_vmid, remote_path=path)
+        if not res_get.get("ok"):
+            return {"ok": False, "summary": f"Failed to get {path} from {source_vmid}", "error": res_get}
+        
+        # 2. Put to target
+        # We need to write this to a temporary local file first because file_ops.put takes a local path
+        import tempfile
+        import os
+        fd, tmp_path = tempfile.mkstemp()
+        try:
+            with os.fdopen(fd, 'w') as f:
+                f.write(str(res_get.get("stdout", "")))
+            
+            res_put = await file_ops.put(vmid=target_vmid, local_path=tmp_path, remote_path=path)
+            if res_put.get("ok"):
+                synced_files.append(path)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+                
+    return {"ok": True, "summary": f"Synced {len(synced_files)} files from {source_vmid} to {target_vmid}.", "synced": synced_files}
