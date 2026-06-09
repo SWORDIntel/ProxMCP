@@ -168,6 +168,8 @@ async def handle_watchdog_request(reader: asyncio.StreamReader, writer: asyncio.
         # FastMCP uses `mcp.server.notification_manager`. For now, we log it, and the client
         # can poll `pvemcp://metrics` or we can just print it to stderr.
         logging.warning(f"[WATCHDOG TRIGGER] Pipeline event received: {body}")
+        # Push notification
+        await admin_notify(body, title='Watchdog Alert')
         asyncio.create_task(send_pushbullet("PveMCP Pipeline Alert", body))
         
         # Respond OK
