@@ -1,8 +1,8 @@
 import pytest
 import asyncio
 from unittest.mock import MagicMock, patch, AsyncMock
-from proxmcp.proxmox import ProxmoxFileOps
-from proxmcp.models import CommandResult
+from pvemcp.proxmox import ProxmoxFileOps
+from pvemcp.models import CommandResult
 
 @pytest.mark.asyncio
 async def test_proxmox_file_put_missing_local():
@@ -32,7 +32,7 @@ async def test_proxmox_file_put_success():
     with patch("pathlib.Path.exists", return_value=True), \
          patch("shutil.copy2"), \
          patch("tempfile.TemporaryDirectory", return_value=MagicMock(__enter__=MagicMock(return_value="/tmp/fake"))), \
-         patch("proxmcp.proxmox.TemporaryFTPServer", return_value=mock_ftp):
+         patch("pvemcp.proxmox.TemporaryFTPServer", return_value=mock_ftp):
         
         result = await ops.put("100", "local.txt", "/tmp/remote.txt")
         assert result.ok is True
@@ -57,7 +57,7 @@ async def test_proxmox_file_get_success():
     mock_ftp.__enter__.return_value = mock_ftp
     
     with patch("tempfile.TemporaryDirectory", return_value=MagicMock(__enter__=MagicMock(return_value="/tmp/fake"))), \
-         patch("proxmcp.proxmox.TemporaryFTPServer", return_value=mock_ftp), \
+         patch("pvemcp.proxmox.TemporaryFTPServer", return_value=mock_ftp), \
          patch("builtins.open", MagicMock(return_value=MagicMock(__enter__=MagicMock(return_value=MagicMock(read=MagicMock(return_value="file content")))))), \
          patch("pathlib.Path.exists", return_value=True):
         

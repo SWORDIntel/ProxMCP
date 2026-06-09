@@ -1,11 +1,11 @@
 {
   "mcpServers": {
-    "proxmcp": {
-      "command": "/home/john/Documents/ProxMCP/.venv/bin/proxmcp-server",
+    "pvemcp": {
+      "command": "/home/john/Documents/PveMCP/.venv/bin/pvemcp-server",
       "transport": "stdio",
       "env": {
-        "PROXMCP_AUDIT_LOG": "/home/john/.gemini/logs/proxmcp-audit.log",
-        "PROXMCP_ALLOW_BREAK_GLASS": "1"
+        "PVEMCP_AUDIT_LOG": "/home/john/.gemini/logs/pvemcp-audit.log",
+        "PVEMCP_ALLOW_BREAK_GLASS": "1"
       }
     }
   }

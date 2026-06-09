@@ -34,11 +34,11 @@ from .vm_memory import (
 )
 
 # Initialize FastMCP
-mcp = FastMCP("ProxMCP")
+mcp = FastMCP("PveMCP")
 
 # Build the internal service
 service = VMService.build(
-    audit_path=os.getenv("PROXMCP_AUDIT_LOG", os.getenv("VM_MCP_AUDIT_LOG", "logs/audit.log")),
+    audit_path=os.getenv("PVEMCP_AUDIT_LOG", os.getenv("VM_MCP_AUDIT_LOG", "logs/audit.log")),
     use_host_sudo=True,
 )
 proxmox = ProxmoxLifecycle(runner=service.runner)

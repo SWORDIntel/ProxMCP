@@ -27,7 +27,7 @@ from typing import Any
 
 
 def _resolve_memory_dir() -> Path:
-    for env_var in ("PROXMCP_MEMORY_DIR", "VM_MCP_MEMORY_DIR"):
+    for env_var in ("PVEMCP_MEMORY_DIR", "VM_MCP_MEMORY_DIR"):
         val = os.getenv(env_var)
         if val:
             try:
@@ -37,7 +37,7 @@ def _resolve_memory_dir() -> Path:
             except Exception:
                 pass
 
-    for path_str in ("~/.proxmcp/memory", "/var/lib/proxmcp/memory"):
+    for path_str in ("~/.pvemcp/memory", "/var/lib/pvemcp/memory"):
         try:
             p = Path(path_str).expanduser()
             p.mkdir(parents=True, exist_ok=True)
@@ -46,7 +46,7 @@ def _resolve_memory_dir() -> Path:
             pass
 
     import tempfile
-    p = Path(tempfile.gettempdir()) / "proxmcp" / "memory"
+    p = Path(tempfile.gettempdir()) / "pvemcp" / "memory"
     p.mkdir(parents=True, exist_ok=True)
     return p
 

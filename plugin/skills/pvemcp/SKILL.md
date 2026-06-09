@@ -1,11 +1,11 @@
 ---
-name: proxmcp
-description: Operate Proxmox/Xen VMs through proxmcp MCP tools with policy-aware, auditable workflows. Use when users ask for VM lifecycle changes, host/guest commands, backup/snapshot work, fleet operations, or VM health checks.
+name: pvemcp
+description: Operate Proxmox/Xen VMs through pvemcp MCP tools with policy-aware, auditable workflows. Use when users ask for VM lifecycle changes, host/guest commands, backup/snapshot work, fleet operations, or VM health checks.
 ---
 
-# proxmcp Operations Skill
+# pvemcp Operations Skill
 
-Use this skill when the request targets infrastructure controlled by proxmcp tools.
+Use this skill when the request targets infrastructure controlled by pvemcp tools.
 
 ## Start of new session
 

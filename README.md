@@ -1,4 +1,4 @@
-# proxmcp
+# pvemcp
 
 `Python 3.11+` · `MCP` · `Proxmox` · `Production-Ready` · `54 Tools` · `License: MIT`
 
@@ -25,13 +25,13 @@ A production-grade **Proxmox VM control plane** with a native [Model Context Pro
 
 ## Overview
 
-proxmcp exposes every Proxmox VM operation — lifecycle, execution, file I/O, logs, networking, Docker, packages, memory, and fleet orchestration — as MCP tools consumable by any MCP-compatible AI client (Claude Desktop, Cursor, etc.) and as `vmctl` subcommands for scripting and direct use.
+pvemcp exposes every Proxmox VM operation — lifecycle, execution, file I/O, logs, networking, Docker, packages, memory, and fleet orchestration — as MCP tools consumable by any MCP-compatible AI client (Claude Desktop, Cursor, etc.) and as `vmctl` subcommands for scripting and direct use.
 
 **Key binaries**
 
 | Binary | Purpose |
 |---|---|
-| `proxmcp-server` | MCP server (stdio transport, 54 tools) |
+| `pvemcp-server` | MCP server (stdio transport, 54 tools) |
 | `vmctl` | Human/script-facing CLI |
 
 ---
@@ -40,10 +40,10 @@ proxmcp exposes every Proxmox VM operation — lifecycle, execution, file I/O, l
 
 ```bash
 # 1. Install on the Proxmox host
-pip install git+https://github.com/SWORDIntel/proxmcp.git
+pip install git+https://github.com/SWORDIntel/pvemcp.git
 
 # 2. Run the MCP server (stdio, picked up by your MCP client)
-proxmcp-server
+pvemcp-server
 
 # 3. Or use the CLI directly
 vmctl list
@@ -54,9 +54,9 @@ vmctl guest-exec 100 "systemctl status nginx"
 **One-shot installer** (installs + configures + optionally registers systemd service):
 
 ```bash
-bash scripts/install-proxmcp.sh --client both          # install for both root and a user
-bash scripts/install-proxmcp.sh --install-service      # register systemd service
-bash scripts/install-proxmcp.sh --uninstall            # remove everything
+bash scripts/install-pvemcp.sh --client both          # install for both root and a user
+bash scripts/install-pvemcp.sh --install-service      # register systemd service
+bash scripts/install-pvemcp.sh --uninstall            # remove everything
 ```
 
 **Recommended first-run sequence for any VM:**
@@ -75,18 +75,18 @@ vmctl drift-check 100            # 4. check for drift after changes
 ### Production (Proxmox host)
 
 ```bash
-python -m pip install git+https://github.com/SWORDIntel/proxmcp.git
+python -m pip install git+https://github.com/SWORDIntel/pvemcp.git
 ```
 
 ### Local development
 
 ```bash
-git clone https://github.com/SWORDIntel/proxmcp.git
-cd proxmcp
+git clone https://github.com/SWORDIntel/pvemcp.git
+cd pvemcp
 pip install -e .
 ```
 
-> **Note:** proxmcp must run **on the Proxmox host** itself. It calls `qm`, `pct`, and `qemu-guest-agent` directly — these are not available over a remote API.
+> **Note:** pvemcp must run **on the Proxmox host** itself. It calls `qm`, `pct`, and `qemu-guest-agent` directly — these are not available over a remote API.
 
 ---
 
@@ -94,9 +94,9 @@ pip install -e .
 
 | Variable | Default | Description |
 |---|---|---|
-| `PROXMCP_AUDIT_LOG` | `logs/audit.log` | Path to the append-only JSON audit log |
-| `PROXMCP_ALLOW_BREAK_GLASS` | *(unset)* | Set to `1` to allow `break_glass` danger-mode commands |
-| `PROXMCP_MEMORY_DIR` | `~/.proxmcp/memory` | Directory for per-VM JSON knowledge store files |
+| `PVEMCP_AUDIT_LOG` | `logs/audit.log` | Path to the append-only JSON audit log |
+| `PVEMCP_ALLOW_BREAK_GLASS` | *(unset)* | Set to `1` to allow `break_glass` danger-mode commands |
+| `PVEMCP_MEMORY_DIR` | `~/.pvemcp/memory` | Directory for per-VM JSON knowledge store files |
 
 ---
 
@@ -109,12 +109,12 @@ Add to your MCP client config (e.g. `~/.config/claude/claude_desktop_config.json
 ```json
 {
   "mcpServers": {
-    "proxmcp": {
-      "command": "proxmcp-server",
+    "pvemcp": {
+      "command": "pvemcp-server",
       "env": {
-        "PROXMCP_AUDIT_LOG": "/var/log/proxmcp-audit.log",
-        "PROXMCP_ALLOW_BREAK_GLASS": "1",
-        "PROXMCP_MEMORY_DIR": "/var/lib/proxmcp/memory"
+        "PVEMCP_AUDIT_LOG": "/var/log/pvemcp-audit.log",
+        "PVEMCP_ALLOW_BREAK_GLASS": "1",
+        "PVEMCP_MEMORY_DIR": "/var/lib/pvemcp/memory"
       }
     }
   }
@@ -183,7 +183,7 @@ Add to your MCP client config (e.g. `~/.config/claude/claude_desktop_config.json
 | `vm_write` | Write or append text content to a guest file |
 | `vm_tar_extract` | Extract `.tar` / `.tar.gz` / `.tar.bz2` / `.tar.xz` on the guest |
 
-> **Performance Note:** `vm_file_put` and `vm_file_get` utilize a high-performance **Temporary FTP Server** mechanism. Instead of inefficient base64 chunking or `cat` stdout capture, ProxMCP spins up a short-lived FTP server on the host to transfer files directly to/from the guest via `ftplib` / `urllib`.
+> **Performance Note:** `vm_file_put` and `vm_file_get` utilize a high-performance **Temporary FTP Server** mechanism. Instead of inefficient base64 chunking or `cat` stdout capture, PveMCP spins up a short-lived FTP server on the host to transfer files directly to/from the guest via `ftplib` / `urllib`.
 
 ---
 
@@ -450,34 +450,34 @@ vmctl dmesg 101
 
 ### Policy Enforcement
 
-`PolicyEnforcer` (`src/proxmcp/policy.py`) wraps every command execution:
+`PolicyEnforcer` (`src/pvemcp/policy.py`) wraps every command execution:
 
 - **Allowlist / denylist** — explicit lists of permitted and denied command patterns
 - **Fail-closed** — if a command isn't on the allowlist it is denied by default
 - **Danger mode escalation ladder:**
   - `safe` — default; no destructive host commands
   - `maintenance` — relaxed for planned ops
-  - `break_glass` — full access; requires `PROXMCP_ALLOW_BREAK_GLASS=1`
+  - `break_glass` — full access; requires `PVEMCP_ALLOW_BREAK_GLASS=1`
 
 ### Audit Log
 
-Every command executed is written to the append-only JSON audit log at `PROXMCP_AUDIT_LOG`. Log entries include timestamp, VMID, command, caller identity, and outcome.
+Every command executed is written to the append-only JSON audit log at `PVEMCP_AUDIT_LOG`. Log entries include timestamp, VMID, command, caller identity, and outcome.
 
 ### Secret Redaction
 
-`SecretRedactor` (`src/proxmcp/security.py`) automatically strips passwords, tokens, and keys from stdout/stderr before they are returned to the caller.
+`SecretRedactor` (`src/pvemcp/security.py`) automatically strips passwords, tokens, and keys from stdout/stderr before they are returned to the caller.
 
 ---
 
 ## Architecture
 
 ```
-src/proxmcp/
+src/pvemcp/
 ├── mcp_server.py    # FastMCP tool definitions — 54 tools (~2500 lines)
 ├── cli.py           # argparse CLI (vmctl)
 ├── proxmox.py       # Proxmox lifecycle, snapshot, file I/O, config, backup, guest exec
 ├── ftp_server.py    # Temporary FTP server for high-performance file transfers
-├── vm_memory.py     # Per-VM JSON knowledge store (~/.proxmcp/memory/)
+├── vm_memory.py     # Per-VM JSON knowledge store (~/.pvemcp/memory/)
 ├── policy.py        # Allowlist/denylist policy enforcement (PolicyEnforcer)
 ├── runner.py        # Async subprocess runner with timeout + retry
 ├── service.py       # VMService — wires runner + policy + audit + metrics + redactor
@@ -515,8 +515,8 @@ service.py  (VMService)
 ### Editable install
 
 ```bash
-git clone https://github.com/SWORDIntel/proxmcp.git
-cd proxmcp
+git clone https://github.com/SWORDIntel/pvemcp.git
+cd pvemcp
 pip install -e ".[dev]"
 ```
 
@@ -525,32 +525,32 @@ pip install -e ".[dev]"
 ```bash
 pytest
 pytest -v tests/test_policy.py      # specific module
-pytest --cov=proxmcp                 # with coverage
+pytest --cov=pvemcp                 # with coverage
 ```
 
 ### Run the MCP server locally
 
 ```bash
-proxmcp-server
+pvemcp-server
 # or
-python -m proxmcp.mcp_server
+python -m pvemcp.mcp_server
 ```
 
 ### Lint / type-check
 
 ```bash
 ruff check src/
-mypy src/proxmcp/
+mypy src/pvemcp/
 ```
 
 ### Project layout
 
 ```
-proxmcp/
-├── src/proxmcp/          # package source
+pvemcp/
+├── src/pvemcp/          # package source
 ├── tests/               # pytest test suite
 ├── scripts/
-│   └── install-proxmcp.sh
+│   └── install-pvemcp.sh
 ├── pyproject.toml
 └── README.md
 ```

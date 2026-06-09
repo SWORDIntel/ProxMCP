@@ -1,5 +1,5 @@
 [project]
-name = "proxmcp"
+name = "pvemcp"
 version = "0.1.0"
 requires-python = ">=3.10"
 description = "Proxmox-oriented MCP server and CLI for VM lifecycle, orchestration, and host/guest operations"
@@ -21,5 +21,5 @@ dev = [
 ]
 
 [project.scripts]
-vmctl = "proxmcp.cli:main"
-proxmcp-server = "proxmcp.mcp_server:main"
+vmctl = "pvemcp.cli:main"
+pvemcp-server = "pvemcp.mcp_server:main"

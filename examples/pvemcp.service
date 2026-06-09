@@ -1,13 +1,13 @@
 [Unit]
-Description=proxmcp MCP server
+Description=pvemcp MCP server
 After=network.target
 
 [Service]
 Type=simple
 User=root
-Environment=PROXMCP_AUDIT_LOG=/var/log/proxmcp-audit.log
-Environment=PROXMCP_ALLOW_BREAK_GLASS=1
-ExecStart=proxmcp-server
+Environment=PVEMCP_AUDIT_LOG=/var/log/pvemcp-audit.log
+Environment=PVEMCP_ALLOW_BREAK_GLASS=1
+ExecStart=pvemcp-server
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal

@@ -1,9 +1,9 @@
 import asyncio
 
-from proxmcp.files import vm_file_put, vm_file_tail
-from proxmcp.profiles import ProfileRegistry, VMProfile
-from proxmcp.xen import XenLifecycle
-from proxmcp.runner import CommandRunner
+from pvemcp.files import vm_file_put, vm_file_tail
+from pvemcp.profiles import ProfileRegistry, VMProfile
+from pvemcp.xen import XenLifecycle
+from pvemcp.runner import CommandRunner
 
 
 def test_profile_registry() -> None:

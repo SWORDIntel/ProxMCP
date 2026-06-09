@@ -1,8 +1,8 @@
 import asyncio
 
-from proxmcp.jobs import JobManager
-from proxmcp.policy import PolicyEnforcer, PolicyError
-from proxmcp.runner import CommandRunner
+from pvemcp.jobs import JobManager
+from pvemcp.policy import PolicyEnforcer, PolicyError
+from pvemcp.runner import CommandRunner
 
 
 def test_policy_blocks_dangerous_command() -> None:
