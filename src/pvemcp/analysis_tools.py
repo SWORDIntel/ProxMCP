@@ -269,3 +269,29 @@ async def host_zfs_scrub_control(
     cmd = f"zpool scrub {pool} {action}"
     res = await _run_with_policy(vmid="0", actor=actor, action=f"host:zfs_scrub:{action}", command=cmd, execute=lambda: service.runner.run(vmid="0", cmd=cmd), danger_mode=danger_mode, audit_tag=audit_tag, command_context="host")
     return _fmt(res, label="zfs_scrub")
+
+@mcp.tool()
+async def vm_run_kp14_pipeline(
+    vmid: str,
+    target_path: str,
+    profile: str = "malware",
+    actor: str = "mcp-agent",
+    audit_tag: str | None = None,
+) -> dict[str, Any]:
+    """Execute the KP14 pipeline inside the VM via the bridge script."""
+    # No danger_mode requirement as requested for the sandbox VM
+    cmd = f"/home/debian/venv/bin/python /home/debian/kp14_bridge.py {shlex.quote(target_path)} {shlex.quote(profile)}"
+    
+    # Run with danger_mode=False for this specific tool
+    res = await _run_with_policy(
+        vmid=vmid,
+        actor=actor,
+        action="kp14:run_pipeline",
+        command=_guest_exec_command(vmid, cmd),
+        execute=lambda: gexec.exec(vmid=vmid, cmd=cmd, timeout=600),
+        danger_mode=False, 
+        audit_tag=audit_tag,
+        command_context="guest"
+    )
+    
+    return _fmt(res, label="kp14_pipeline")
