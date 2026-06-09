@@ -954,8 +954,10 @@ def main() -> int:
         return 0
 
     if args.command == "workflow":
-        from .workflows import LuaWorkflowEngine
-        from .mcp_server import vm_state, vm_guest_exec, vm_service_restart, vm_drift_check, vm_disk_reclaim, vm_remote_exec, admin_notify
+        from .lua_engine import LuaWorkflowEngine
+        from .mcp_server import vm_state, vm_guest_exec, vm_service_restart, vm_drift_check, vm_remote_exec
+        from .analysis_tools import admin_notify
+        from .power_tools import vm_disk_reclaim
         engine = LuaWorkflowEngine()
         engine.bind_tool("vm_state", vm_state)
         engine.bind_tool("vm_guest_exec", vm_guest_exec)

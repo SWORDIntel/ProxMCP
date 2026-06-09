@@ -2735,6 +2735,29 @@ def troubleshoot_prompt(vmid: str) -> str:
 import pvemcp.power_tools  # Register power-user tools
 import pvemcp.analysis_tools  # Register analysis & forensic tools
 
+
+@mcp.tool()
+def vm_run_workflow(script_name: str) -> dict[str, Any]:
+    """Execute a Lua workflow script."""
+    from .lua_engine import LuaWorkflowEngine
+    from .mcp_server import vm_state, vm_guest_exec, vm_service_restart, vm_drift_check, vm_remote_exec
+    from .analysis_tools import admin_notify
+    from .power_tools import vm_disk_reclaim
+    
+    engine = LuaWorkflowEngine()
+    engine.bind_tool("vm_state", vm_state)
+    engine.bind_tool("vm_guest_exec", vm_guest_exec)
+    engine.bind_tool("vm_service_restart", vm_service_restart)
+    engine.bind_tool("vm_drift_check", vm_drift_check)
+    engine.bind_tool("vm_disk_reclaim", vm_disk_reclaim)
+    engine.bind_tool("vm_remote_exec", vm_remote_exec)
+    engine.bind_tool("admin_notify", admin_notify)
+    
+    try:
+        result = engine.run_script(script_name)
+        return {"ok": True, "result": str(result)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 def main():
     mcp.run()
 
