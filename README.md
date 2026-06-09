@@ -54,6 +54,21 @@ PveMCP's **67 tools** are organized into functional categories to empower autono
 
 ---
 
+## 🛠️ Advanced Configuration
+
+### Sudo & Permissions
+The `vmctl` CLI and `pvemcp-server` default to using `sudo` for host-side Proxmox commands to ensure access to the cluster filesystem (`pmxcfs`).
+
+- **Environment Variables**:
+  - `PVEMCP_USE_SUDO`: Set to `false` to disable automatic sudo prefixing (default: `true`).
+  - `PVEMCP_AUDIT_LOG`: Path to the audit log file.
+
+### Error Diagnostics
+PveMCP includes built-in diagnostics for common Proxmox cluster issues. If a command fails with `ipcc_send_rec` or ACL errors, the tool output will include a `[DIAGNOSTIC]` block explaining potential causes like lost cluster quorum or missing sudo permissions.
+
+
+---
+
 ## ⚡ Quick Start
 
 ### 1. Installation

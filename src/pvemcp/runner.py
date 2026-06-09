@@ -84,11 +84,17 @@ class CommandRunner:
                 stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
                 duration_ms = int((time.monotonic() - start) * 1000)
                 code = proc.returncode or 0
+                stderr = stderr_b.decode()
+                if not (code == 0) and "ipcc_send_rec" in stderr:
+                    stderr += "\n[DIAGNOSTIC] Proxmox cluster communication failure. This usually means 'pve-cluster' (pmxcfs) is down or the node has lost quorum."
+                if not (code == 0) and "Unable to load access control list" in stderr:
+                    stderr += "\n[DIAGNOSTIC] Permissions failure. If not running as root, ensure 'pvemcp' has sudo access for 'qm' commands. This can also happen if 'pve-cluster' is down."
+
                 return CommandResult(
                     ok=(code == 0),
                     code=code,
                     stdout=stdout_b.decode(),
-                    stderr=stderr_b.decode(),
+                    stderr=stderr,
                     duration_ms=duration_ms,
                     vmid=vmid,
                     cmd=cmd,

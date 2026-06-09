@@ -92,6 +92,7 @@ def _fmt(result: dict[str, Any], *, label: str = "") -> dict[str, Any]:
 
     Strips empty fields, trims long stdout to 4 KB, and adds a 'summary' key
     with a one-line status so callers don't need to parse raw exit codes.
+    It also handles qm guest exec JSON output to reflect the guest-side status.
     """
     ok: bool = bool(result.get("ok"))
     stdout: str = str(result.get("stdout") or "").strip()
@@ -100,13 +101,36 @@ def _fmt(result: dict[str, Any], *, label: str = "") -> dict[str, Any]:
     duration: int = int(result.get("duration_ms", 0))
     vmid: str = str(result.get("vmid", ""))
 
+    # If it looks like qm guest exec JSON, parse it
+    guest_exit_code = None
+    if ok and stdout.startswith("{") and stdout.endswith("}"):
+        try:
+            payload = json.loads(stdout)
+            if isinstance(payload, dict) and "exitcode" in payload:
+                guest_exit_code = payload["exitcode"]
+                ok = (guest_exit_code == 0)
+                stdout = str(payload.get("out-data") or "").strip()
+                if not ok:
+                    guest_stderr = str(payload.get("err-data") or "").strip()
+                    if guest_stderr:
+                        stderr = f"{stderr}\n{guest_stderr}".strip()
+                    if not stderr:
+                        stderr = f"Guest command failed with exit code {guest_exit_code}"
+        except json.JSONDecodeError:
+            pass
+
     # Truncate very long output
     if len(stdout) > 4096:
         stdout = stdout[:4096] + "\n... [truncated]"
     if len(stderr) > 1024:
         stderr = stderr[:1024] + "\n... [truncated]"
 
-    status = "\u2713 OK" if ok else f"\u2717 FAILED (exit {code})"
+    status_icon = "\u2713" if ok else "\u2717"
+    if guest_exit_code is not None:
+        status = f"{status_icon} GUEST OK" if ok else f"{status_icon} GUEST FAILED (exit {guest_exit_code})"
+    else:
+        status = f"{status_icon} OK" if ok else f"{status_icon} FAILED (exit {code})"
+    
     parts = [status]
     if label:
         parts = [f"[{label}] {status}"]
@@ -118,6 +142,8 @@ def _fmt(result: dict[str, Any], *, label: str = "") -> dict[str, Any]:
         out["output"] = stdout
     if stderr:
         out["error"] = stderr
+    if guest_exit_code is not None:
+        out["guest_exit_code"] = guest_exit_code
     if not ok:
         out["exit_code"] = code
     if vmid:
@@ -368,7 +394,7 @@ async def vm_exec(
     audit_tag: str | None = None,
 ) -> dict[str, Any]:
     """Execute a command on a VM with policy enforcement."""
-    return await _run_with_policy(
+    result = await _run_with_policy(
         vmid=vmid,
         actor=actor,
         action="vm_exec",
@@ -388,6 +414,7 @@ async def vm_exec(
         audit_tag=audit_tag,
         command_context="host",
     )
+    return _fmt(result, label="exec")
 
 @mcp.tool()
 async def vm_guest_exec(
@@ -402,7 +429,7 @@ async def vm_guest_exec(
 ) -> dict[str, Any]:
     """Execute a command inside a Proxmox guest using the guest agent."""
     command = _guest_exec_command(vmid=vmid, cmd=cmd, cwd=cwd, env=env, timeout=timeout)
-    return await _run_with_policy(
+    result = await _run_with_policy(
         vmid=vmid,
         actor=actor,
         action="vm_guest_exec",
@@ -412,6 +439,7 @@ async def vm_guest_exec(
         audit_tag=audit_tag,
         command_context="guest",
     )
+    return _fmt(result, label="guest_exec")
 
 @mcp.tool()
 async def vm_file_put(
@@ -2305,7 +2333,7 @@ async def vm_agent_probe(
     Returns ok=True if the agent responds. If this fails, all vm_guest_exec and
     guest-context commands will also fail — run this first to diagnose connectivity.
     """
-    cmd = f"qm agent {vmid} ping"
+    cmd = f"qm guest agent {vmid} ping"
     result = await _run_with_policy(
         vmid=vmid, actor=actor, action="vm_agent_probe",
         command=cmd,
@@ -2316,14 +2344,9 @@ async def vm_agent_probe(
         ),
         danger_mode=danger_mode, audit_tag=audit_tag, command_context="host",
     )
-    ok = result.get("ok", False)
-    return {
-        "ok": ok,
-        "summary": f"Guest agent on VM {vmid}: {'✓ ONLINE' if ok else '✗ OFFLINE / not running'}",
-        "vmid": vmid,
-        "agent_online": ok,
-        "detail": str(result.get("stderr", "") or result.get("stdout", "")).strip() or None,
-    }
+    res = _fmt(result, label="agent_probe")
+    res["agent_online"] = res.get("ok", False)
+    return res
 
 
 @mcp.tool()

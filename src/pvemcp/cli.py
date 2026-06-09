@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import shlex
 from typing import Awaitable, Callable, Literal
 
@@ -353,7 +354,8 @@ def main() -> int:
     args = parser.parse_args()
     danger_mode = "maintenance"
     global service
-    service = VMService.build(use_host_sudo=False)
+    use_sudo = os.getenv("PVEMCP_USE_SUDO", os.getenv("VM_MCP_USE_SUDO", "true")).lower() == "true"
+    service = VMService.build(use_host_sudo=use_sudo)
     global gexec
     xen = XenLifecycle(runner=service.runner)
     proxmox = ProxmoxLifecycle(runner=service.runner)
