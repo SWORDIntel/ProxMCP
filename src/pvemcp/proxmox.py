@@ -302,7 +302,7 @@ class ProxmoxFileOps:
                 guest_cmd = (
                     f"python3 -c \"from ftplib import FTP; ftp=FTP(); "
                     f"ftp.connect('{host_ip}', {ftp.port}); ftp.login(); "
-                    f"with open('{remote_path}', 'rb') as f: ftp.storbinary('STOR {filename}', f); "
+                    f"f = open('{remote_path}', 'rb'); ftp.storbinary('STOR {filename}', f); f.close(); "
                     f"ftp.quit()\""
                 )
                 cmd = build_qm_command("qm", "guest", "exec", vmid, "--", "bash", "-c", guest_cmd)

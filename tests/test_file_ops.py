@@ -70,3 +70,4 @@ async def test_proxmox_file_get_success():
         assert "qm guest exec 100 -- bash -c" in call_args["cmd"]
         assert "ftplib import FTP" in call_args["cmd"]
         assert "ftp.storbinary" in call_args["cmd"]
+        assert "f = open" in call_args["cmd"]
